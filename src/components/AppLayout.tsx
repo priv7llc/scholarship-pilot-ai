@@ -1,17 +1,8 @@
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { ReactNode } from "react";
-import { GraduationCap, LayoutDashboard, User as UserIcon, LogOut } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/lib/auth";
+import { GraduationCap, LayoutDashboard, User as UserIcon } from "lucide-react";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const logout = async () => {
-    await supabase.auth.signOut();
-    navigate("/auth");
-  };
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur-md">
@@ -34,11 +25,6 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               `inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition ${isActive ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
               <UserIcon className="h-4 w-4" /> Profile
             </NavLink>
-            {user && (
-              <Button variant="ghost" size="sm" onClick={logout} className="ml-2">
-                <LogOut className="h-4 w-4" />
-              </Button>
-            )}
           </nav>
         </div>
       </header>
