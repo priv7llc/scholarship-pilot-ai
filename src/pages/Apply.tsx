@@ -2,13 +2,16 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import AppLayout from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/lib/auth";
+import { Scholarship, AppStatus } from "@/lib/scholarship";
 import {
-  Application,
-  Scholarship,
-  fetchApplications,
+  EMPTY_PROFILE as STORE_EMPTY_PROFILE,
+  LocalApplication,
+  LocalProfile,
+  getApplication,
+  loadProfile,
+  saveProfile as persistProfile,
   upsertApplication,
-} from "@/lib/scholarship";
+} from "@/lib/localStore";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,15 +39,8 @@ const TONES = [
   { id: "bold", label: "Bold / standout", desc: "Distinctive voice" },
 ];
 
-type Profile = {
-  full_name: string; school: string; grade: string; major: string; gpa: string;
-  background: string; challenges: string; achievements: string; extracurriculars: string;
-};
-
-const EMPTY_PROFILE: Profile = {
-  full_name: "", school: "", grade: "", major: "", gpa: "",
-  background: "", challenges: "", achievements: "", extracurriculars: "",
-};
+type Profile = LocalProfile;
+const EMPTY_PROFILE: Profile = STORE_EMPTY_PROFILE;
 
 const SCHOLARSHIP_QUESTIONS = [
   "Why do you deserve this scholarship?",
@@ -55,9 +51,8 @@ const SCHOLARSHIP_QUESTIONS = [
 export default function Apply() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [s, setS] = useState<Scholarship | null>(null);
-  const [app, setApp] = useState<Application | null>(null);
+  const [app, setApp] = useState<LocalApplication | null>(null);
   const [profile, setProfile] = useState<Profile>(EMPTY_PROFILE);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [tone, setTone] = useState("story");
@@ -68,23 +63,12 @@ export default function Apply() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    if (!id || !user) return;
+    if (!id) return;
     (async () => {
-      const [sch, prof, apps] = await Promise.all([
-        supabase.from("scholarships").select("*").eq("id", id).maybeSingle(),
-        supabase.from("user_profile").select("*").eq("user_id", user.id).maybeSingle(),
-        fetchApplications(),
-      ]);
+      const sch = await supabase.from("scholarships").select("*").eq("id", id).maybeSingle();
       setS(sch.data as Scholarship | null);
-      if (prof.data) {
-        const d = prof.data as Record<string, string | null>;
-        const next: Profile = { ...EMPTY_PROFILE };
-        (Object.keys(EMPTY_PROFILE) as (keyof Profile)[]).forEach((k) => {
-          if (typeof d[k] === "string") next[k] = d[k] as string;
-        });
-        setProfile(next);
-      }
-      const existing = apps.find((a) => a.scholarship_id === id) ?? null;
+      setProfile(loadProfile());
+      const existing = getApplication(id);
       setApp(existing);
       if (existing) {
         setAnswers(existing.answers || {});
@@ -94,20 +78,17 @@ export default function Apply() {
       }
       setLoading(false);
     })();
-  }, [id, user]);
+  }, [id]);
 
   const totalSteps = 4;
   const progress = step <= totalSteps ? (step / totalSteps) * 100 : 100;
 
-  const saveProfile = async () => {
-    if (!user) return;
-    await supabase.from("user_profile").upsert({ user_id: user.id, ...profile }, { onConflict: "user_id" });
-  };
+  const saveProfileLocal = () => persistProfile(profile);
 
-  const persistApp = async (patch: Partial<Application> = {}) => {
-    if (!user || !s) return null;
-    const saved = await upsertApplication({
-      user_id: user.id,
+  type AppPatch = { status?: AppStatus; answers?: Record<string, string>; tone?: string | null; essay?: string | null };
+  const persistApp = (patch: AppPatch = {}) => {
+    if (!s) return null;
+    const saved = upsertApplication({
       scholarship_id: s.id,
       status: patch.status ?? app?.status ?? "in_progress",
       answers: patch.answers ?? answers,
@@ -119,9 +100,8 @@ export default function Apply() {
   };
 
   const next = async () => {
-    if (step === 1) await saveProfile();
-    if (step === 2) await saveProfile();
-    await persistApp();
+    if (step === 1 || step === 2) saveProfileLocal();
+    persistApp();
     setStep((s) => s + 1);
   };
   const prev = () => setStep((s) => Math.max(1, s - 1));
@@ -144,7 +124,7 @@ export default function Apply() {
       if ((data as { error?: string })?.error) throw new Error((data as { error: string }).error);
       const next = (data as { essay: string }).essay;
       setEssay(next);
-      await persistApp({ essay: next, status: "essay_generated" });
+      persistApp({ essay: next, status: "essay_generated" });
       setStep(5);
       toast.success("Essay updated");
     } catch (e) {
@@ -154,8 +134,8 @@ export default function Apply() {
     }
   };
 
-  const markSubmitted = async () => {
-    await persistApp({ status: "submitted" });
+  const markSubmitted = () => {
+    persistApp({ status: "submitted" });
     toast.success("Marked as submitted 🎉");
     navigate("/");
   };
