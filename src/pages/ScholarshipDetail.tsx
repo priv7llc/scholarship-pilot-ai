@@ -6,26 +6,24 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowUpRight, CheckCircle2, Clock, DollarSign, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Application, Scholarship, STATUS_LABEL, STATUS_TONE, AppStatus } from "@/lib/scholarship";
+import { Scholarship, STATUS_LABEL, STATUS_TONE, AppStatus } from "@/lib/scholarship";
+import { LocalApplication, getApplication } from "@/lib/localStore";
 import { toast } from "sonner";
 
 export default function ScholarshipDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [s, setS] = useState<Scholarship | null>(null);
-  const [app, setApp] = useState<Application | null>(null);
+  const [app, setApp] = useState<LocalApplication | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!id) return;
     (async () => {
-      const [sch, ap] = await Promise.all([
-        supabase.from("scholarships").select("*").eq("id", id).maybeSingle(),
-        supabase.from("applications").select("*").eq("scholarship_id", id).maybeSingle(),
-      ]);
+      const sch = await supabase.from("scholarships").select("*").eq("id", id).maybeSingle();
       if (sch.error) toast.error(sch.error.message);
       setS(sch.data as Scholarship | null);
-      setApp(ap.data as Application | null);
+      setApp(getApplication(id));
       setLoading(false);
     })();
   }, [id]);

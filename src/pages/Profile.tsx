@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
 import AppLayout from "@/components/AppLayout";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,41 +7,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Save } from "lucide-react";
-
-type Profile = {
-  full_name: string; school: string; grade: string; major: string; gpa: string;
-  background: string; challenges: string; achievements: string; extracurriculars: string;
-};
-const EMPTY: Profile = {
-  full_name: "", school: "", grade: "", major: "", gpa: "",
-  background: "", challenges: "", achievements: "", extracurriculars: "",
-};
+import { EMPTY_PROFILE, LocalProfile, loadProfile, saveProfile } from "@/lib/localStore";
 
 export default function ProfilePage() {
-  const { user } = useAuth();
-  const [p, setP] = useState<Profile>(EMPTY);
-  const [busy, setBusy] = useState(false);
+  const [p, setP] = useState<LocalProfile>(EMPTY_PROFILE);
 
   useEffect(() => {
-    if (!user) return;
-    supabase.from("user_profile").select("*").eq("user_id", user.id).maybeSingle().then(({ data }) => {
-      if (!data) return;
-      const d = data as Record<string, string | null>;
-      const next: Profile = { ...EMPTY };
-      (Object.keys(EMPTY) as (keyof Profile)[]).forEach((k) => {
-        if (typeof d[k] === "string") next[k] = d[k] as string;
-      });
-      setP(next);
-    });
-  }, [user]);
+    setP(loadProfile());
+  }, []);
 
-  const save = async () => {
-    if (!user) return;
-    setBusy(true);
-    const { error } = await supabase.from("user_profile").upsert({ user_id: user.id, ...p }, { onConflict: "user_id" });
-    setBusy(false);
-    if (error) toast.error(error.message);
-    else toast.success("Profile saved — future essays will reuse this.");
+  const save = () => {
+    saveProfile(p);
+    toast.success("Profile saved — future essays will reuse this.");
   };
 
   return (
@@ -65,8 +40,8 @@ export default function ProfilePage() {
             <A l="Achievements" v={p.achievements} on={(v) => setP({ ...p, achievements: v })} />
             <A l="Extracurriculars / leadership" v={p.extracurriculars} on={(v) => setP({ ...p, extracurriculars: v })} />
           </div>
-          <Button className="mt-6" onClick={save} disabled={busy}>
-            <Save className="mr-1.5 h-4 w-4" /> {busy ? "Saving…" : "Save profile"}
+          <Button className="mt-6" onClick={save}>
+            <Save className="mr-1.5 h-4 w-4" /> Save profile
           </Button>
         </Card>
       </div>

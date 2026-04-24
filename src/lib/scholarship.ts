@@ -14,16 +14,6 @@ export type Scholarship = {
 
 export type AppStatus = "not_started" | "in_progress" | "essay_generated" | "submitted";
 
-export type Application = {
-  id: string;
-  user_id: string;
-  scholarship_id: string;
-  status: AppStatus;
-  answers: Record<string, string>;
-  tone: string | null;
-  essay: string | null;
-};
-
 export const STATUS_LABEL: Record<AppStatus, string> = {
   not_started: "Not started",
   in_progress: "In progress",
@@ -46,27 +36,4 @@ export async function fetchScholarships() {
     .order("name");
   if (error) throw error;
   return data as Scholarship[];
-}
-
-export async function fetchApplications() {
-  const { data, error } = await supabase.from("applications").select("*");
-  if (error) throw error;
-  return data as Application[];
-}
-
-export async function upsertApplication(input: {
-  scholarship_id: string;
-  user_id: string;
-  status?: AppStatus;
-  answers?: Record<string, string>;
-  tone?: string | null;
-  essay?: string | null;
-}) {
-  const { data, error } = await supabase
-    .from("applications")
-    .upsert(input, { onConflict: "user_id,scholarship_id" })
-    .select()
-    .single();
-  if (error) throw error;
-  return data as Application;
 }
