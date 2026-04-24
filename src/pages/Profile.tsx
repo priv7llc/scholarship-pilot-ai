@@ -40,8 +40,8 @@ export default function ProfilePage() {
             <A l="Achievements" v={p.achievements} on={(v) => setP({ ...p, achievements: v })} />
             <A l="Extracurriculars / leadership" v={p.extracurriculars} on={(v) => setP({ ...p, extracurriculars: v })} />
           </div>
-          <Button className="mt-6" onClick={save} disabled={busy}>
-            <Save className="mr-1.5 h-4 w-4" /> {busy ? "Saving…" : "Save profile"}
+          <Button className="mt-6" onClick={save}>
+            <Save className="mr-1.5 h-4 w-4" /> Save profile
           </Button>
         </Card>
       </div>
