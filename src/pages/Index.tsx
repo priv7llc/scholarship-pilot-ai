@@ -8,36 +8,33 @@ import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import {
-  Application,
   AppStatus,
   STATUS_LABEL,
   STATUS_TONE,
   Scholarship,
-  fetchApplications,
   fetchScholarships,
 } from "@/lib/scholarship";
+import { LocalApplication, loadApplications } from "@/lib/localStore";
 import { toast } from "sonner";
 
 export default function Index() {
   const [scholarships, setScholarships] = useState<Scholarship[]>([]);
-  const [apps, setApps] = useState<Application[]>([]);
+  const [apps, setApps] = useState<LocalApplication[]>([]);
   const [q, setQ] = useState("");
   const [category, setCategory] = useState("all");
   const [status, setStatus] = useState("all");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([fetchScholarships(), fetchApplications()])
-      .then(([s, a]) => {
-        setScholarships(s);
-        setApps(a);
-      })
+    setApps(loadApplications());
+    fetchScholarships()
+      .then(setScholarships)
       .catch((e) => toast.error(e.message))
       .finally(() => setLoading(false));
   }, []);
 
   const appByScholarship = useMemo(() => {
-    const m = new Map<string, Application>();
+    const m = new Map<string, LocalApplication>();
     for (const a of apps) m.set(a.scholarship_id, a);
     return m;
   }, [apps]);
