@@ -77,8 +77,12 @@ export default function Apply() {
       ]);
       setS(sch.data as Scholarship | null);
       if (prof.data) {
-        const { user_id, created_at, updated_at, ...rest } = prof.data as never;
-        setProfile({ ...EMPTY_PROFILE, ...(rest as Profile) });
+        const d = prof.data as Record<string, string | null>;
+        const next: Profile = { ...EMPTY_PROFILE };
+        (Object.keys(EMPTY_PROFILE) as (keyof Profile)[]).forEach((k) => {
+          if (typeof d[k] === "string") next[k] = d[k] as string;
+        });
+        setProfile(next);
       }
       const existing = apps.find((a) => a.scholarship_id === id) ?? null;
       setApp(existing);
