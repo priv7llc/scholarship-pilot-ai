@@ -14,7 +14,134 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      applications: {
+        Row: {
+          answers: Json
+          created_at: string
+          essay: string | null
+          id: string
+          scholarship_id: string
+          status: Database["public"]["Enums"]["application_status"]
+          tone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          answers?: Json
+          created_at?: string
+          essay?: string | null
+          id?: string
+          scholarship_id: string
+          status?: Database["public"]["Enums"]["application_status"]
+          tone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          created_at?: string
+          essay?: string | null
+          id?: string
+          scholarship_id?: string
+          status?: Database["public"]["Enums"]["application_status"]
+          tone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "applications_scholarship_id_fkey"
+            columns: ["scholarship_id"]
+            isOneToOne: false
+            referencedRelation: "scholarships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scholarships: {
+        Row: {
+          amount: string | null
+          category: string | null
+          created_at: string
+          deadline: string | null
+          id: string
+          name: string
+          priority: string | null
+          requirements: string | null
+          url: string | null
+          who_for: string | null
+        }
+        Insert: {
+          amount?: string | null
+          category?: string | null
+          created_at?: string
+          deadline?: string | null
+          id?: string
+          name: string
+          priority?: string | null
+          requirements?: string | null
+          url?: string | null
+          who_for?: string | null
+        }
+        Update: {
+          amount?: string | null
+          category?: string | null
+          created_at?: string
+          deadline?: string | null
+          id?: string
+          name?: string
+          priority?: string | null
+          requirements?: string | null
+          url?: string | null
+          who_for?: string | null
+        }
+        Relationships: []
+      }
+      user_profile: {
+        Row: {
+          achievements: string | null
+          background: string | null
+          challenges: string | null
+          created_at: string
+          extracurriculars: string | null
+          full_name: string | null
+          gpa: string | null
+          grade: string | null
+          major: string | null
+          school: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          achievements?: string | null
+          background?: string | null
+          challenges?: string | null
+          created_at?: string
+          extracurriculars?: string | null
+          full_name?: string | null
+          gpa?: string | null
+          grade?: string | null
+          major?: string | null
+          school?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          achievements?: string | null
+          background?: string | null
+          challenges?: string | null
+          created_at?: string
+          extracurriculars?: string | null
+          full_name?: string | null
+          gpa?: string | null
+          grade?: string | null
+          major?: string | null
+          school?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +150,11 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      application_status:
+        | "not_started"
+        | "in_progress"
+        | "essay_generated"
+        | "submitted"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +281,13 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      application_status: [
+        "not_started",
+        "in_progress",
+        "essay_generated",
+        "submitted",
+      ],
+    },
   },
 } as const
